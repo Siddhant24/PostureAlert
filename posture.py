@@ -8,7 +8,6 @@ import argparse
 import datetime
 
 from aboutGUI import Ui_AboutWindow
-from PyInstallerUtils import pyInstallerResourcePath
 
 # import subprocess
 
@@ -21,8 +20,10 @@ from PyQt5.QtWidgets import (QPushButton, QApplication, QProgressBar, QLabel,
 from PyQt5.QtCore import (QThread, QTimer, QRect, QPropertyAnimation)
 from PyQt5.QtGui import QIcon
 
-# CASCPATH = "/usr/local/opt/opencv3/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml"
-# FACECASCADE = CascadeClassifier(CASCPATH)
+
+def pyInstallerResourcePath(relativePath):
+    basePath = getattr(sys, '_MEIPASS', os.path.abspath('.'))
+    return os.path.join(basePath, relativePath)
 
 # Delay between checking posture in miliseconds.
 MONITOR_DELAY = 2000
@@ -39,7 +40,6 @@ SESSION_ID = None
 TERMINAL_NOTIFIER_INSTALLED = None
 
 CASCPATH = 'face.xml'
-# CASCPATH = pyInstallerResourcePath('haarcascade_eye_tree_eyeglasses.xml')
 FACECASCADE = CascadeClassifier(pyInstallerResourcePath(CASCPATH))
 print("path:", pyInstallerResourcePath(CASCPATH))
 
@@ -57,47 +57,23 @@ def getFaces(frame):
         scaleFactor=1.1,
         minNeighbors=2,
         minSize=(100, 100),
-        #         flags=cv2.cv.CV_HAAR_SCALE_IMAGE
         flags=0)
     if len(faces):
         print("Face found: ", faces[0])
     return faces
 
 
-class Sensei(QMainWindow):
+class Posture(QMainWindow):
     def __init__(self):
         super().__init__()
 
         self.initUI()
-        # print("meta:", USER_ID, SESSION_ID)
-        # self.history = {}
-        # self.history[USER_ID] = {}
-        # self.history[USER_ID][SESSION_ID] = {}
-        # self.history[USER_ID][SESSION_ID][datetime.datetime.now().strftime(
-            # '%Y-%m-%d_%H-%M-%S')] = "sensitivity: " + str(SENSITIVITY)
-
         self.capture = Capture(self)
 
         self.timer = QTimer(self, timeout=self.calibrate)
         self.mode = 0  # 0: Initial, 1: Calibrate, 2: Monitor
         self.instructions.setText('Sit upright and click \'Calibrate\'')
 
-    #     self.checkDependencies()
-
-    # def checkDependencies(self):
-    #     global TERMINAL_NOTIFIER_INSTALLED
-
-    #     # if 'darwin' in sys.platform and not TERMINAL_NOTIFIER_INSTALLED:
-    #     #     # FIXME: Add check for Brew installation and installation of
-    #     #     # terminal-notifier.
-    #     #     self.instructions.setText(
-    #     #         'Installing terminal-notifier dependency')
-    #     #     print('Installing terminal-notifier is required')
-    #         # FIXME: This line hangs.
-    #         # subprocess.call(
-    #         #     ['brew', 'install', 'terminal-notifier'], stdout=subprocess.PIPE)
-    #         # TERMINAL_NOTIFIER_INSTALLED = True
-    #     self.instructions.setText('Sit upright and click \'Calibrate\'')
 
     def aboutEvent(self, event):
         dialog = QDialog()
@@ -108,24 +84,7 @@ class Sensei(QMainWindow):
         self.trayIcon.showMessage("Notice 🙇👊", "Keep strait posture",
                                   QSystemTrayIcon.Information, 4000)
 
-    def closeEvent(self, event):
-        """ Override QWidget close event to save history on exit. """
-        # TODO: Replace with CSV method.
-        # if os.path.exists('posture.dat'):
-        #     with open('posture.dat','rb') as saved_history:
-        #         history =pickle.load(saved_history)
-        # if self.history:
-        #     if hasattr(sys, "_MEIPASS"):  # PyInstaller deployed
-        #         here = os.path.join(sys._MEIPASS)
-        #     else:
-        #         here = os.path.dirname(os.path.realpath(__file__))
-        #     directory = os.path.join(here, 'data', str(USER_ID))
-        #     # directory = os.path.join(here, 'data', 'test')
-        #     if not os.path.exists(directory):
-        #         os.makedirs(directory)
-        #     with open(os.path.join(directory,
-        #                            str(SESSION_ID) + '.dat'), 'wb') as f:
-        #         pickle.dump(self.history, f)
+    def closeEvent(self, event): 
         qApp.quit()
 
     def start(self):
@@ -137,8 +96,6 @@ class Sensei(QMainWindow):
     def initUI(self):
 
         menu = QMenu()
-        # Use Buddha in place of smiley face
-        # iconPath = pyInstallerResourcePath('exit-gray.png')
         iconPath = pyInstallerResourcePath('meditate.png')
         self.trayIcon = QSystemTrayIcon(self)
         supported = self.trayIcon.supportsMessages()
@@ -152,11 +109,10 @@ class Sensei(QMainWindow):
         self.postureIcon.show()
 
         exitAction = QAction(
-            "&Quit Sensei", self, shortcut="Ctrl+Q", triggered=self.closeEvent)
+            "&Quit Posture", self, shortcut="Ctrl+Q", triggered=self.closeEvent)
         preferencesAction = QAction(
             "&Preferences...", self, triggered=self.showApp)
-        # preferencesAction.setStatusTip('Sensei Preferences')
-        aboutAction = QAction("&About Sensei", self, triggered=self.aboutEvent)
+        aboutAction = QAction("&About Posture", self, triggered=self.aboutEvent)
 
         menu.addAction(aboutAction)
         menu.addSeparator()
@@ -167,11 +123,6 @@ class Sensei(QMainWindow):
         soundToggleAction = QAction(
             "Toggle Sound", self, triggered=self.toggleSound)
         optionsMenu.addAction(soundToggleAction)
-
-        # TODO: Add settings panel.
-        # changeSettings = QAction(QIcon('exit.png'), "&Settings", self, shortcut="Cmd+,", triggered=self.changeSettings)
-        # changeSettings.setStatusTip('Change Settings')
-        # menu.addAction(changeSettings)
 
         self.pbar = QProgressBar(self)
         self.pbar.setGeometry(30, 40, 200, 25)
@@ -194,10 +145,6 @@ class Sensei(QMainWindow):
         self.doneButton.move(30, 60)
         self.doneButton.hide()
         self.doneButton.clicked.connect(self.minimize)
-        # TODO: Create QWidget panel for Settings with MONITOR_DELAY
-        # and SENSITIVITY options.
-        # layout = QFormLayout()
-        # self.le = QLineEdit()
 
         self.instructions = QLabel(self)
         self.instructions.move(40, 20)
@@ -283,33 +230,11 @@ class Sensei(QMainWindow):
         x, y, w, h = faces[0]
         if w > self.upright * SENSITIVITY:
             self.notify(
-                title='Sensei 🙇👊',  # TODO: Add doctor emoji `👨‍⚕️`
+                title='PostureAlert 🙇👊',  # TODO: Add doctor emoji `👨‍⚕️`
                 subtitle='Whack!',
                 message='Sit up strait 🙏⛩',)
 
     def notify(self, title, subtitle, message, sound=None, appIcon=None):
-        """
-        Mac-only and requires `terminal-notifier` to be installed.
-        # TODO: Add check that terminal-notifier is installed.
-        # TODO: Add Linux and windows compatibility.
-        # TODO: Linux example:
-        # TODO: sudo apt-get install libnotify-bin
-        # TODO: from gi.repository import Notify
-        # TODO: Notify.init("App Name")
-        # TODO: Notify.Notification.new("Hi").show()
-        """
-        # FIXME: Test following line on windows / linux.
-        # Doesn't work on Mac and might replace `terminal-notifier` dependency
-        # self.trayIcon.showMessage('Title', 'Content')
-        if 'darwin' in sys.platform and TERMINAL_NOTIFIER_INSTALLED:  # Check if on a Mac.
-            t = '-title {!r}'.format(title)
-            s = '-subtitle {!r}'.format(subtitle)
-            m = '-message {!r}'.format(message)
-            snd = '-sound {!r}'.format(sound)
-            i = '-appIcon {!r}'.format(appIcon)
-            os.system('terminal-notifier {}'.format(' '.join([m, t, s, snd,
-                                                              i])))
-        else:
             self.trayIcon.showMessage("Notice 🙇👊", "Keep strait posture",
                                       QSystemTrayIcon.Information, 4000)
 
@@ -353,7 +278,7 @@ class Sensei(QMainWindow):
 
     def openGitHub(self):
         import webbrowser
-        webbrowser.open_new_tab('https://github.com/JustinShenk/sensei')
+        webbrowser.open_new_tab('https://github.com/JustinShenk/posture')
 
 
 class Capture(QThread):
@@ -404,7 +329,7 @@ def main():
     # QApplication expects the first argument to be the program name.
     qt_args = sys.argv[:1] + unparsed_args
     app = QApplication(qt_args)
-    sensei = Sensei()
+    posture = Posture()
     sys.exit(app.exec_())
 
 

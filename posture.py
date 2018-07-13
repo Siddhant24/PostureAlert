@@ -114,18 +114,18 @@ class Sensei(QMainWindow):
         # if os.path.exists('posture.dat'):
         #     with open('posture.dat','rb') as saved_history:
         #         history =pickle.load(saved_history)
-        if self.history:
-            if hasattr(sys, "_MEIPASS"):  # PyInstaller deployed
-                here = os.path.join(sys._MEIPASS)
-            else:
-                here = os.path.dirname(os.path.realpath(__file__))
-            directory = os.path.join(here, 'data', str(USER_ID))
-            # directory = os.path.join(here, 'data', 'test')
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            with open(os.path.join(directory,
-                                   str(SESSION_ID) + '.dat'), 'wb') as f:
-                pickle.dump(self.history, f)
+        # if self.history:
+        #     if hasattr(sys, "_MEIPASS"):  # PyInstaller deployed
+        #         here = os.path.join(sys._MEIPASS)
+        #     else:
+        #         here = os.path.dirname(os.path.realpath(__file__))
+        #     directory = os.path.join(here, 'data', str(USER_ID))
+        #     # directory = os.path.join(here, 'data', 'test')
+        #     if not os.path.exists(directory):
+        #         os.makedirs(directory)
+        #     with open(os.path.join(directory,
+        #                            str(SESSION_ID) + '.dat'), 'wb') as f:
+        #         pickle.dump(self.history, f)
         qApp.quit()
 
     def start(self):
@@ -247,8 +247,8 @@ class Sensei(QMainWindow):
         self.instructions.hide()
         self.pbar.hide()
         self.settingsButton.hide()
-        self.history[USER_ID][SESSION_ID][datetime.datetime.now().strftime(
-            '%Y-%m-%d_%H-%M-%S')] = "baseline: " + str(self.upright)
+        # self.history[USER_ID][SESSION_ID][datetime.datetime.now().strftime(
+        #     '%Y-%m-%d_%H-%M-%S')] = "baseline: " + str(self.upright)
         self.animateClosing()
 
         # Begin monitoring posture.
@@ -278,8 +278,8 @@ class Sensei(QMainWindow):
             faces = getFaces(photo)
         # Record history for later analyis.
         # TODO: Make this into cvs-friendly format.
-        self.history[USER_ID][SESSION_ID][datetime.datetime.now().strftime(
-            '%Y-%m-%d_%H-%M-%S')] = faces
+        # self.history[USER_ID][SESSION_ID][datetime.datetime.now().strftime(
+        #     '%Y-%m-%d_%H-%M-%S')] = faces
         x, y, w, h = faces[0]
         if w > self.upright * SENSITIVITY:
             self.notify(
@@ -337,9 +337,9 @@ class Sensei(QMainWindow):
         # print(faces) # Take argmax of faces
         x, y, w, h = faces[0]
         self.upright = w
-        self.history[USER_ID][SESSION_ID][datetime.datetime.now().strftime(
-            '%Y-%m-%d_%H-%M-%S') + ': calibration'] = self.upright
-        self.history["upright_face_width"] = self.upright
+        # self.history[USER_ID][SESSION_ID][datetime.datetime.now().strftime(
+        #     '%Y-%m-%d_%H-%M-%S') + ': calibration'] = self.upright
+        # self.history["upright_face_width"] = self.upright
         if self.mode == 0:  # Initial mode
             self.timer.start(CALIBRATION_SAMPLE_RATE)
             self.startButton.hide()

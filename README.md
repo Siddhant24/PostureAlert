@@ -14,9 +14,9 @@
 </ul>
 
 <h3> INSTALLATION </h3>
-<p>Run <xmp>pip3 install opencv-python pyqt5</xmp></p>
+<p>Run <code>pip3 install opencv-python pyqt5</code></p>
 
 <h3> USAGE </h3>
-<p> Run <xmp>python3 posture.py</xmp></p>
-<p> Sit upright in a comfortable position and click calibrate </p>
-<p> The app will notify if you are too clos to the screen </p>
+<p> Run <code>python3 posture.py</code></p>
+<p> Sit upright in a comfortable position and click calibrate. </p>
+<p> The app will notify if you are too clos to the screen. </p>

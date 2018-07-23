@@ -32,9 +32,6 @@ MONITOR_DELAY = 2000
 SENSITIVITY = 1.2
 CALIBRATION_SAMPLE_RATE = 100
 
-# Sound setting
-soundOn = True
-
 USER_ID = None
 SESSION_ID = None
 TERMINAL_NOTIFIER_INSTALLED = None
@@ -74,16 +71,6 @@ class Posture(QMainWindow):
         self.mode = 0  # 0: Initial, 1: Calibrate, 2: Monitor
         self.instructions.setText('Sit upright and click \'Calibrate\'')
 
-
-    def aboutEvent(self, event):
-        dialog = QDialog()
-        aboutDialog = Ui_AboutWindow()
-        aboutDialog.setupUi(dialog)
-        aboutDialog.githubButton.clicked.connect(self.openGitHub)
-        dialog.exec_()
-        self.trayIcon.showMessage("Notice 🙇👊", "Keep strait posture",
-                                  QSystemTrayIcon.Information, 4000)
-
     def closeEvent(self, event): 
         qApp.quit()
 
@@ -96,33 +83,14 @@ class Posture(QMainWindow):
     def initUI(self):
 
         menu = QMenu()
-        iconPath = pyInstallerResourcePath('meditate.png')
         self.trayIcon = QSystemTrayIcon(self)
         supported = self.trayIcon.supportsMessages()
-        self.trayIcon.setIcon(QIcon(iconPath))
         self.trayIcon.setContextMenu(menu)
         self.trayIcon.showMessage('a', 'b')
         self.trayIcon.show()
         self.postureIcon = QSystemTrayIcon(self)
-        self.postureIcon.setIcon(QIcon(pyInstallerResourcePath('posture.png')))
         self.postureIcon.setContextMenu(menu)
         self.postureIcon.show()
-
-        exitAction = QAction(
-            "&Quit Posture", self, shortcut="Ctrl+Q", triggered=self.closeEvent)
-        preferencesAction = QAction(
-            "&Preferences...", self, triggered=self.showApp)
-        aboutAction = QAction("&About Posture", self, triggered=self.aboutEvent)
-
-        menu.addAction(aboutAction)
-        menu.addSeparator()
-        menu.addAction(preferencesAction)
-        menu.addSeparator()
-        menu.addAction(exitAction)
-        optionsMenu = menu.addMenu('&Options')
-        soundToggleAction = QAction(
-            "Toggle Sound", self, triggered=self.toggleSound)
-        optionsMenu.addAction(soundToggleAction)
 
         self.pbar = QProgressBar(self)
         self.pbar.setGeometry(30, 40, 200, 25)
@@ -156,25 +124,12 @@ class Posture(QMainWindow):
                 'Error: Notification is not available on your system.')
         self.show()
 
-    def toggleSound(self):
-        global soundOn  # FIXME: Replace with preferences dictionary or similar
-        soundOn = not soundOn
-
     def minimize(self):
         self.reset()
         self.hide()
 
     def reset(self):
         pass
-
-    def showApp(self):
-        self.show()
-        self.raise_()
-        self.doneButton.hide()
-        self.startButton.show()
-        self.pbar.show()
-        self.settingsButton.show()
-        self.activateWindow()
 
     def settings(self):
         global MONITOR_DELAY
@@ -194,8 +149,6 @@ class Posture(QMainWindow):
         self.instructions.hide()
         self.pbar.hide()
         self.settingsButton.hide()
-        # self.history[USER_ID][SESSION_ID][datetime.datetime.now().strftime(
-        #     '%Y-%m-%d_%H-%M-%S')] = "baseline: " + str(self.upright)
         self.animateClosing()
 
         # Begin monitoring posture.
@@ -213,7 +166,7 @@ class Posture(QMainWindow):
 
     def monitor(self):
         """
-        Grab the picture, find the face, and sent notification
+        Take the picture, find the face, and send notification
         if needed.
         """
         photo = self.capture.takePhoto()
@@ -223,24 +176,20 @@ class Posture(QMainWindow):
             time.sleep(2)
             photo = self.capture.takePhoto()
             faces = getFaces(photo)
-        # Record history for later analyis.
-        # TODO: Make this into cvs-friendly format.
-        # self.history[USER_ID][SESSION_ID][datetime.datetime.now().strftime(
-        #     '%Y-%m-%d_%H-%M-%S')] = faces
+     
         x, y, w, h = faces[0]
         if w > self.upright * SENSITIVITY:
             self.notify(
-                title='PostureAlert 🙇👊',  # TODO: Add doctor emoji `👨‍⚕️`
-                subtitle='Whack!',
-                message='Sit up strait 🙏⛩',)
+                title='PostureAlert 🙇👊',  
+                subtitle='notice',
+                message='Sit up straight 🙏⛩',)
 
     def notify(self, title, subtitle, message, sound=None, appIcon=None):
-            self.trayIcon.showMessage("Notice 🙇👊", "Keep strait posture",
+            self.trayIcon.showMessage("Notice 🙇👊", "Keep straight posture",
                                       QSystemTrayIcon.Information, 4000)
 
     def calibrate(self):
-        if self.mode == 2:  # Came from 'Recalibrate'
-            # Set up for calibrate mode.
+        if self.mode == 2:  
             self.mode = 1
             self.stopButton.show()
             self.startButton.hide()
@@ -248,7 +197,6 @@ class Posture(QMainWindow):
             self.timer.stop()
             self.timer = QTimer(self, timeout=self.calibrate)
             self.timer.start(CALIBRATION_SAMPLE_RATE)
-        # Interpolate posture information from face.
         photo = self.capture.takePhoto()
         faces = getFaces(photo)
         while not len(faces):
@@ -256,15 +204,9 @@ class Posture(QMainWindow):
             time.sleep(2)
             photo = self.capture.takePhoto()
             faces = getFaces(photo)
-        # TODO: Focus on user's face rather than artifacts of face detector of others
-        # on camera
-        # if len(faces) > 1:
-        # print(faces) # Take argmax of faces
+       
         x, y, w, h = faces[0]
         self.upright = w
-        # self.history[USER_ID][SESSION_ID][datetime.datetime.now().strftime(
-        #     '%Y-%m-%d_%H-%M-%S') + ': calibration'] = self.upright
-        # self.history["upright_face_width"] = self.upright
         if self.mode == 0:  # Initial mode
             self.timer.start(CALIBRATION_SAMPLE_RATE)
             self.startButton.hide()
@@ -275,10 +217,6 @@ class Posture(QMainWindow):
             # Update posture monitor bar.
             self.pbar.setValue(self.upright / 4)
             time.sleep(0.05)
-
-    def openGitHub(self):
-        import webbrowser
-        webbrowser.open_new_tab('https://github.com/JustinShenk/posture')
 
 
 class Capture(QThread):
@@ -295,39 +233,15 @@ class Capture(QThread):
             self.cam.open(0)
             waitKey(5)
         _, frame = self.cam.read()
-        # cv2.imwrite('tst.png', frame)
         waitKey(1)
-        # Optional - save image.
-        # cv2.imwrite('save.png', frame)
+
         return frame
 
-
-def processCLArgs():
-    """ Process command line arguments to work with QApplication. """
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-d", "--debug", help="Debug mode", action="store_true")
-    # TODO: Add to `Session ID` to settings menu.
-    parser.add_argument("--session", help="Session ID", action="store")
-    parser.add_argument("--user", help="User ID", action="store")
-
-    parsed_args, unparsed_args = parser.parse_known_args()
-    return parsed_args, unparsed_args
-
-
 def main():
-
-    parsed_args, unparsed_args = processCLArgs()
-    SESSION_ID = parsed_args.session
-    USER_ID = parsed_args.user
-    # (Debug mode) Set global debug tracing option.
-    if parsed_args.debug:
-        sys.settrace(trace)
-    # Check dependency.
     TERMINAL_NOTIFIER_INSTALLED = True if os.path.exists(
         '/usr/local/bin/terminal-notifier') else False
     # QApplication expects the first argument to be the program name.
-    qt_args = sys.argv[:1] + unparsed_args
+    qt_args = sys.argv[:1]
     app = QApplication(qt_args)
     posture = Posture()
     sys.exit(app.exec_())

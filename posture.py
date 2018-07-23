@@ -7,7 +7,7 @@ import pickle
 import argparse
 import datetime
 
-from aboutGUI import Ui_AboutWindow
+from GUI import Ui_AboutWindow
 
 # import subprocess
 
